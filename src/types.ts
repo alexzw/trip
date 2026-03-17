@@ -2,6 +2,7 @@ export type LinkType = 'map' | 'status' | 'ticket' | 'station' | 'info'
 
 export type TravelFlag = 'important' | 'must-do' | 'must-buy' | 'attention'
 export type MainTab = 'today' | 'days' | 'footprints' | 'checklist' | 'more'
+export type AppTab = 'home' | 'itinerary' | 'map' | 'expenses' | 'memories'
 export type FootprintView = 'map' | 'list' | 'timeline' | 'summary'
 export type FootprintSource = 'itinerary' | 'manual' | 'photo-import'
 export type FootprintCategory =
@@ -146,6 +147,37 @@ export interface TripData {
   packingZones: ChecklistSection[]
   days: TripDay[]
   futureFeatures: string[]
+}
+
+export interface ExpenseItem {
+  id: string
+  tripId: string
+  dayId?: string
+  date: string
+  title: string
+  amount: number
+  currency: string
+  category: 'transport' | 'meal' | 'stay' | 'shopping' | 'ticket' | 'other'
+  note?: string
+}
+
+export interface MemoryEntry {
+  id: string
+  tripId: string
+  dayId?: string
+  date: string
+  title: string
+  caption?: string
+  note?: string
+  imageUrl?: string
+  emoji?: string
+  placeName?: string
+}
+
+export interface TripStore {
+  trips: TripData[]
+  expenses: ExpenseItem[]
+  memories: MemoryEntry[]
 }
 
 export interface FootprintPhoto {

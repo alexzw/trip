@@ -1,17 +1,17 @@
-import { Archive, CalendarDays, CheckSquare, House, Menu, type LucideIcon } from 'lucide-react'
-import type { MainTab } from '../types'
+import { Coins, House, Images, ListTodo, Map, type LucideIcon } from 'lucide-react'
+import type { AppTab } from '../types'
 
 interface BottomNavProps {
-  activeTab: MainTab
-  onChange: (tab: MainTab) => void
+  activeTab: AppTab
+  onChange: (tab: AppTab) => void
 }
 
-const tabs: Array<{ id: MainTab; label: string; icon: LucideIcon }> = [
-  { id: 'today', label: 'Today', icon: House },
-  { id: 'days', label: 'Days', icon: CalendarDays },
-  { id: 'checklist', label: 'Checklist', icon: CheckSquare },
-  { id: 'more', label: 'More', icon: Menu },
-  { id: 'footprints', label: 'Footprints', icon: Archive },
+const tabs: Array<{ id: AppTab; label: string; icon: LucideIcon }> = [
+  { id: 'home', label: 'Home', icon: House },
+  { id: 'itinerary', label: 'Itinerary', icon: ListTodo },
+  { id: 'map', label: 'Map', icon: Map },
+  { id: 'expenses', label: 'Expenses', icon: Coins },
+  { id: 'memories', label: 'Memories', icon: Images },
 ]
 
 export function BottomNav({ activeTab, onChange }: BottomNavProps) {
@@ -28,7 +28,7 @@ export function BottomNav({ activeTab, onChange }: BottomNavProps) {
               onClick={() => onChange(tab.id)}
               className={`flex min-h-[60px] flex-col items-center justify-center rounded-[14px] px-2 py-2 text-[11px] font-semibold transition ${
                 active
-                  ? 'bg-sage text-white shadow-[0_8px_16px_rgba(47,93,80,0.16)]'
+                  ? 'bg-[#F1F4F2] text-sage'
                   : 'text-mist hover:bg-[#F4F4F1] hover:text-ink'
               }`}
               aria-current={active ? 'page' : undefined}

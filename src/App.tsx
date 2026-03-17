@@ -1,80 +1,106 @@
-import { useDeferredValue, useEffect, useMemo, useState, type TouchEvent } from 'react'
+import { useEffect, useMemo, useState, type TouchEvent } from 'react'
 import { AppShell } from './components/AppShell'
 import { BottomNav } from './components/BottomNav'
-import { ChecklistPanel } from './components/ChecklistPanel'
-import { DailyDetail } from './components/DailyDetail'
-import { DayNavigator } from './components/DayNavigator'
-import { EditModePanel } from './components/EditModePanel'
-import { EmptyState } from './components/EmptyState'
-import { FootprintsPage } from './components/FootprintsPage'
-import { OverviewPanel } from './components/OverviewPanel'
-import { PageHeader } from './components/PageHeader'
-import { QuickEditSheet } from './components/QuickEditSheet'
-import { SectionBlock } from './components/SectionBlock'
-import { ShoppingPanel } from './components/ShoppingPanel'
-import { TodayView } from './components/TodayView'
-import { Toolbar } from './components/Toolbar'
-import { defaultNewDay, defaultTripData } from './data/tripData'
+import { DayTimelinePage } from './components/DayTimelinePage'
+import { EventDetailSheet } from './components/EventDetailSheet'
+import { FloatingActionButton } from './components/FloatingActionButton'
+import { TripDetailPage } from './components/TripDetailPage'
+import { TripsHomePage } from './components/TripsHomePage'
+import { defaultNewDay, defaultNewTrip, defaultTripStore } from './data/tripData'
 import { useLocalStorage } from './hooks/useLocalStorage'
 import type {
-  ExternalLink,
-  FilterCategory,
+  AppTab,
+  ExpenseItem,
   Footprint,
-  MainTab,
   MealItem,
-  NoteItem,
-  PlanBItem,
+  MemoryEntry,
   TimelineItem,
-  TravelFlag,
+  TripData,
   TripDay,
+  TripStore,
 } from './types'
 import { buildFootprintFromItem } from './utils/footprints'
-import { dayHasLinks, getDayProgress, getOverallProgress, matchesDay, reorderList } from './utils/trip'
 
-const STORAGE_KEY = 'travel-trip-manager'
-const FOOTPRINTS_STORAGE_KEY = 'travel-footprints'
+const STORE_KEY = 'travel-trip-manager'
+const FOOTPRINTS_KEY = 'travel-footprints'
+
+type AppScreen = 'home' | 'trip' | 'day'
+type EventCollection = 'transportation' | 'itinerary' | 'meals'
 
 function getInitialDayId(days: TripDay[]) {
   const today = new Date().toISOString().slice(0, 10)
   return days.find((day) => day.date === today)?.id ?? days[0]?.id ?? ''
 }
 
+function normalizeStorePayload(payload: TripStore | TripData | null | undefined): TripStore {
+  if (payload && 'trips' in payload) {
+    return payload
+  }
+
+  if (payload && 'days' in payload) {
+    return {
+      trips: [payload],
+      expenses: [],
+      memories: [],
+    }
+  }
+
+  return defaultTripStore()
+}
+
+function blankTimelineItem(collection: EventCollection): TimelineItem | MealItem {
+  const base = {
+    id: crypto.randomUUID(),
+    time: '',
+    title: collection === 'transportation' ? 'New transport' : collection === 'meals' ? 'New meal' : 'New event',
+    description: '',
+    isDone: false,
+    isStarred: false,
+  }
+
+  if (collection === 'meals') {
+    return base
+  }
+
+  return {
+    ...base,
+    category: collection === 'transportation' ? 'transport' : 'activity',
+    locationName: '',
+    bookingReference: '',
+    seatInfo: '',
+  }
+}
+
 function App() {
-  const [trip, setTrip] = useLocalStorage(STORAGE_KEY, defaultTripData())
-  const [footprints, setFootprints] = useLocalStorage<Footprint[]>(FOOTPRINTS_STORAGE_KEY, [])
-  const [activeTab, setActiveTab] = useState<MainTab>('today')
-  const [selectedDayId, setSelectedDayId] = useState(() => getInitialDayId(defaultTripData().days))
-  const [query, setQuery] = useState('')
-  const deferredQuery = useDeferredValue(query)
-  const [cityFilter, setCityFilter] = useState('all')
-  const [categoryFilter, setCategoryFilter] = useState<FilterCategory>('all')
-  const [hasPlanBOnly, setHasPlanBOnly] = useState(false)
-  const [hasLinksOnly, setHasLinksOnly] = useState(false)
-  const [editMode, setEditMode] = useState(false)
+  const [rawStore, setRawStore] = useLocalStorage<TripStore | TripData>(STORE_KEY, defaultTripStore())
+  const [footprints, setFootprints] = useLocalStorage<Footprint[]>(FOOTPRINTS_KEY, [])
+  const store = useMemo(() => normalizeStorePayload(rawStore), [rawStore])
+
+  const [screen, setScreen] = useState<AppScreen>('home')
+  const [activeTab, setActiveTab] = useState<AppTab>('home')
+  const [selectedTripId, setSelectedTripId] = useState(store.trips[0]?.id ?? '')
+  const [selectedDayId, setSelectedDayId] = useState(store.trips[0] ? getInitialDayId(store.trips[0].days) : '')
+  const [eventTarget, setEventTarget] = useState<{ collection: EventCollection; itemId: string } | null>(null)
   const [toast, setToast] = useState('')
   const [touchStartX, setTouchStartX] = useState<number | null>(null)
-  const [quickEditTarget, setQuickEditTarget] = useState<{
-    collection: 'transportation' | 'itinerary' | 'meals'
-    itemId: string
-  } | null>(null)
-
-  const filteredDays = useMemo(
-    () =>
-      trip.days.filter((day) => {
-        const cityMatch = cityFilter === 'all' || day.city.includes(cityFilter)
-        const planBMatch = !hasPlanBOnly || day.planB.length > 0
-        const linksMatch = !hasLinksOnly || dayHasLinks(day)
-
-        return cityMatch && planBMatch && linksMatch && matchesDay(day, deferredQuery, categoryFilter)
-      }),
-    [trip.days, cityFilter, hasPlanBOnly, hasLinksOnly, deferredQuery, categoryFilter],
-  )
 
   useEffect(() => {
-    if (!trip.days.some((day) => day.id === selectedDayId)) {
-      setSelectedDayId(getInitialDayId(trip.days))
+    if (!('trips' in rawStore)) {
+      setRawStore(store)
     }
-  }, [trip.days, selectedDayId])
+  }, [rawStore, setRawStore, store])
+
+  useEffect(() => {
+    if (!store.trips.some((trip) => trip.id === selectedTripId)) {
+      const fallbackTrip = store.trips[0]
+      setSelectedTripId(fallbackTrip?.id ?? '')
+      setSelectedDayId(fallbackTrip ? getInitialDayId(fallbackTrip.days) : '')
+      if (!fallbackTrip) {
+        setScreen('home')
+        setActiveTab('home')
+      }
+    }
+  }, [selectedTripId, store.trips])
 
   useEffect(() => {
     if (!toast) return
@@ -82,24 +108,195 @@ function App() {
     return () => window.clearTimeout(timer)
   }, [toast])
 
-  const selectedDay =
-    trip.days.find((day) => day.id === selectedDayId) ??
-    filteredDays[0] ??
-    trip.days[0]
+  const selectedTrip = store.trips.find((trip) => trip.id === selectedTripId) ?? store.trips[0]
+  const selectedDay = selectedTrip?.days.find((day) => day.id === selectedDayId) ?? selectedTrip?.days[0]
+  const activeBottomTab = screen === 'home' ? 'home' : activeTab
 
-  const quickEditItem =
-    quickEditTarget && selectedDay
-      ? selectedDay[quickEditTarget.collection].find((item) => item.id === quickEditTarget.itemId) ?? null
+  const eventItem =
+    eventTarget && selectedDay
+      ? selectedDay[eventTarget.collection].find((item) => item.id === eventTarget.itemId) ?? null
       : null
 
+  const updateStore = (updater: (current: TripStore) => TripStore) => {
+    setRawStore((current) => updater(normalizeStorePayload(current)))
+  }
+
+  const updateSelectedTrip = (updater: (trip: TripData) => TripData) => {
+    if (!selectedTrip) return
+    updateStore((current) => ({
+      ...current,
+      trips: current.trips.map((trip) => (trip.id === selectedTrip.id ? updater(trip) : trip)),
+    }))
+  }
+
+  const updateSelectedDay = (updater: (day: TripDay) => TripDay) => {
+    if (!selectedTrip || !selectedDay) return
+    updateSelectedTrip((trip) => ({
+      ...trip,
+      days: trip.days.map((day) => (day.id === selectedDay.id ? updater(day) : day)),
+    }))
+  }
+
+  const handleOpenTrip = (tripId: string) => {
+    const trip = store.trips.find((item) => item.id === tripId)
+    if (!trip) return
+    setSelectedTripId(tripId)
+    setSelectedDayId(getInitialDayId(trip.days))
+    setScreen('trip')
+    setActiveTab('itinerary')
+  }
+
+  const handleBottomNav = (tab: AppTab) => {
+    if (tab === 'home') {
+      setScreen('home')
+      setActiveTab('home')
+      return
+    }
+
+    if (!selectedTrip && store.trips[0]) {
+      handleOpenTrip(store.trips[0].id)
+      return
+    }
+
+    setActiveTab(tab)
+    setScreen('trip')
+  }
+
+  const handleAddTrip = () => {
+    const trip = defaultNewTrip()
+    updateStore((current) => ({
+      ...current,
+      trips: [trip, ...current.trips],
+    }))
+    setSelectedTripId(trip.id)
+    setSelectedDayId(getInitialDayId(trip.days))
+    setScreen('trip')
+    setActiveTab('itinerary')
+    setToast('New trip created')
+  }
+
+  const handleAddDay = () => {
+    if (!selectedTrip) return
+    const dayNumber = selectedTrip.days.length + 1
+    const day = defaultNewDay(dayNumber)
+    updateSelectedTrip((trip) => ({
+      ...trip,
+      days: [...trip.days, day],
+    }))
+    setSelectedDayId(day.id)
+    setScreen('day')
+    setToast('Day added')
+  }
+
+  const handleAddEvent = (collection: EventCollection = 'itinerary') => {
+    const nextItem = blankTimelineItem(collection)
+    updateSelectedDay((day) => ({
+      ...day,
+      [collection]: [...day[collection], nextItem],
+    }))
+    setEventTarget({ collection, itemId: nextItem.id })
+    setToast('Event added')
+  }
+
+  const toggleDone = (collection: EventCollection, itemId: string) => {
+    updateSelectedDay((day) => ({
+      ...day,
+      [collection]: day[collection].map((item) =>
+        item.id === itemId ? { ...item, isDone: !item.isDone } : item,
+      ),
+    }))
+  }
+
+  const toggleStar = (collection: EventCollection, itemId: string) => {
+    updateSelectedDay((day) => ({
+      ...day,
+      [collection]: day[collection].map((item) =>
+        item.id === itemId ? { ...item, isStarred: !item.isStarred } : item,
+      ),
+    }))
+  }
+
+  const saveEvent = (collection: EventCollection, itemId: string, updates: Partial<TimelineItem & MealItem>) => {
+    updateSelectedDay((day) => ({
+      ...day,
+      [collection]: day[collection].map((item) => (item.id === itemId ? { ...item, ...updates } : item)),
+    }))
+  }
+
+  const addFootprintFromEvent = (collection: EventCollection, itemId: string) => {
+    if (!selectedTrip || !selectedDay) return
+    const sourceItem = selectedDay[collection].find((item) => item.id === itemId)
+    if (!sourceItem) return
+
+    const existing = footprints.find(
+      (footprint) => footprint.relatedDayId === selectedDay.id && footprint.relatedItemId === sourceItem.id,
+    )
+    if (existing) {
+      setToast('Already in memories')
+      return
+    }
+
+    setFootprints((current) => [
+      buildFootprintFromItem({
+        trip: selectedTrip,
+        day: selectedDay,
+        item: sourceItem,
+        collection,
+      }),
+      ...current,
+    ])
+    setToast('Added to memories')
+  }
+
+  const addExpense = () => {
+    if (!selectedTrip) return
+    const day = selectedDay ?? selectedTrip.days[0]
+    const expense: ExpenseItem = {
+      id: crypto.randomUUID(),
+      tripId: selectedTrip.id,
+      dayId: day?.id,
+      date: day?.date ?? '',
+      title: 'New expense',
+      amount: 0,
+      currency: 'JPY',
+      category: 'other',
+      note: '',
+    }
+    updateStore((current) => ({
+      ...current,
+      expenses: [expense, ...current.expenses],
+    }))
+    setToast('Expense placeholder added')
+  }
+
+  const addMemory = () => {
+    if (!selectedTrip) return
+    const day = selectedDay ?? selectedTrip.days[0]
+    const memory: MemoryEntry = {
+      id: crypto.randomUUID(),
+      tripId: selectedTrip.id,
+      dayId: day?.id,
+      date: day?.date ?? '',
+      title: day ? `Day ${day.dayNumber} memory` : 'New memory',
+      caption: '',
+      note: '',
+      emoji: '📷',
+      placeName: day?.city,
+    }
+    updateStore((current) => ({
+      ...current,
+      memories: [memory, ...current.memories],
+    }))
+    setToast('Memory card added')
+  }
+
   const selectRelativeDay = (direction: 'prev' | 'next') => {
-    if (!selectedDay) return
-    const available = filteredDays.length ? filteredDays : trip.days
-    const index = available.findIndex((day) => day.id === selectedDay.id)
+    if (!selectedTrip || !selectedDay) return
+    const index = selectedTrip.days.findIndex((day) => day.id === selectedDay.id)
     if (index < 0) return
     const nextIndex = direction === 'prev' ? index - 1 : index + 1
-    if (nextIndex < 0 || nextIndex >= available.length) return
-    setSelectedDayId(available[nextIndex].id)
+    if (nextIndex < 0 || nextIndex >= selectedTrip.days.length) return
+    setSelectedDayId(selectedTrip.days[nextIndex].id)
   }
 
   const handleTouchStart = (event: TouchEvent<HTMLElement>) => {
@@ -116,633 +313,87 @@ function App() {
     setTouchStartX(null)
   }
 
-  const updateSelectedDay = (updater: (day: TripDay) => TripDay) => {
-    if (!selectedDay) return
-
-    setTrip((current) => ({
-      ...current,
-      days: current.days.map((day) => (day.id === selectedDay.id ? updater(day) : day)),
-    }))
-  }
-
-  const updateChecklistGroup = (
-    group: 'finalChecks' | 'packingChecklist' | 'packingZones',
-    sectionId: string,
-    itemId: string,
-  ) => {
-    setTrip((current) => ({
-      ...current,
-      [group]: current[group].map((section) =>
-        section.id === sectionId
-          ? {
-              ...section,
-              items: section.items.map((item) =>
-                item.id === itemId ? { ...item, checked: !item.checked } : item,
-              ),
-            }
-          : section,
-      ),
-    }))
-  }
-
-  const toggleTrackableItem = (
-    collection: 'transportation' | 'itinerary' | 'meals',
-    itemId: string,
-    field: 'isDone' | 'isStarred',
-  ) => {
-    updateSelectedDay((day) => ({
-      ...day,
-      [collection]: day[collection].map((item) =>
-        item.id === itemId ? { ...item, [field]: !item[field] } : item,
-      ),
-    }))
-  }
-
-  const updateDayField = (field: keyof TripDay, value: string | string[]) => {
-    updateSelectedDay((day) => ({ ...day, [field]: value }))
-  }
-
-  const updateTimelineField = (
-    collection: 'transportation' | 'itinerary',
-    itemId: string,
-    field: keyof TimelineItem,
-    value: string | boolean | FilterCategory | TravelFlag | undefined,
-  ) => {
-    updateSelectedDay((day) => ({
-      ...day,
-      [collection]: day[collection].map((item) =>
-        item.id === itemId ? { ...item, [field]: value } : item,
-      ),
-    }))
-  }
-
-  const updateMealField = (
-    itemId: string,
-    field: keyof MealItem,
-    value: string | boolean | TravelFlag | undefined,
-  ) => {
-    updateSelectedDay((day) => ({
-      ...day,
-      meals: day.meals.map((item) => (item.id === itemId ? { ...item, [field]: value } : item)),
-    }))
-  }
-
-  const updateNoteField = (
-    itemId: string,
-    field: keyof NoteItem,
-    value: string | TravelFlag | undefined,
-  ) => {
-    updateSelectedDay((day) => ({
-      ...day,
-      notes: day.notes.map((item) => (item.id === itemId ? { ...item, [field]: value } : item)),
-    }))
-  }
-
-  const updatePlanBField = (itemId: string, field: keyof PlanBItem, value: string) => {
-    updateSelectedDay((day) => ({
-      ...day,
-      planB: day.planB.map((item) => (item.id === itemId ? { ...item, [field]: value } : item)),
-    }))
-  }
-
-  const updateLinkList = (
-    links: ExternalLink[],
-    linkId: string,
-    field: keyof ExternalLink,
-    value: string,
-  ) => links.map((link) => (link.id === linkId ? { ...link, [field]: value } : link))
-
-  const createNewLink = (): ExternalLink => ({
-    id: crypto.randomUUID(),
-    label: '查看連結',
-    url: '',
-    type: 'info',
-  })
-
-  const updateDayLink = (linkId: string, field: keyof ExternalLink, value: string) => {
-    updateSelectedDay((day) => ({
-      ...day,
-      links: updateLinkList(day.links, linkId, field, value),
-    }))
-  }
-
-  const updateNestedItemLinks = (
-    collection: 'transportation' | 'itinerary' | 'meals' | 'notes' | 'planB',
-    itemId: string,
-    linkId: string,
-    field: keyof ExternalLink,
-    value: string,
-  ) => {
-    updateSelectedDay((day) => ({
-      ...day,
-      [collection]: day[collection].map((item) =>
-        item.id === itemId
-          ? {
-              ...item,
-              links: updateLinkList(item.links ?? [], linkId, field, value),
-            }
-          : item,
-      ),
-    }))
-  }
-
-  const addTimelineItem = (collection: 'transportation' | 'itinerary') => {
-    updateSelectedDay((day) => ({
-      ...day,
-      [collection]: [
-        ...day[collection],
-        {
-          id: crypto.randomUUID(),
-          time: '',
-          title: '',
-          category: collection === 'transportation' ? 'transport' : 'activity',
-          isDone: false,
-          isStarred: false,
-        },
-      ],
-    }))
-  }
-
-  const addMeal = () => {
-    updateSelectedDay((day) => ({
-      ...day,
-      meals: [
-        ...day.meals,
-        { id: crypto.randomUUID(), time: '', title: '', category: 'meal', isDone: false, isStarred: false },
-      ],
-    }))
-  }
-
-  const addQuickItem = (collection: 'transportation' | 'itinerary' | 'meals') => {
-    const newId = crypto.randomUUID()
-
-    updateSelectedDay((day) => {
-      if (collection === 'meals') {
-        return {
-          ...day,
-          meals: [
-            ...day.meals,
-            {
-              id: newId,
-              time: '',
-              title: '',
-              description: '',
-              category: 'meal',
-              isDone: false,
-              isStarred: false,
-            },
-          ],
-        }
-      }
-
-      return {
-        ...day,
-        [collection]: [
-          ...day[collection],
-          {
-            id: newId,
-            time: '',
-            endTime: '',
-            title: '',
-            description: '',
-            locationName: '',
-            category: collection === 'transportation' ? 'transport' : 'activity',
-            isDone: false,
-            isStarred: false,
-          },
-        ],
-      }
-    })
-
-    setQuickEditTarget({ collection, itemId: newId })
-    setToast('已新增新項目')
-  }
-
-  const addNote = () => {
-    updateSelectedDay((day) => ({
-      ...day,
-      notes: [...day.notes, { id: crypto.randomUUID(), title: '', content: '' }],
-    }))
-  }
-
-  const addPlanB = () => {
-    updateSelectedDay((day) => ({
-      ...day,
-      planB: [...day.planB, { id: crypto.randomUUID(), title: '', content: '' }],
-    }))
-  }
-
-  const addDayLink = () => {
-    updateSelectedDay((day) => ({
-      ...day,
-      links: [...day.links, createNewLink()],
-    }))
-  }
-
-  const addItemLink = (
-    collection: 'transportation' | 'itinerary' | 'meals' | 'notes' | 'planB',
-    itemId: string,
-  ) => {
-    updateSelectedDay((day) => ({
-      ...day,
-      [collection]: day[collection].map((item) =>
-        item.id === itemId
-          ? {
-              ...item,
-              links: [...(item.links ?? []), createNewLink()],
-            }
-          : item,
-      ),
-    }))
-  }
-
-  const deleteItem = (
-    collection: 'transportation' | 'itinerary' | 'meals' | 'notes' | 'planB',
-    itemId: string,
-  ) => {
-    updateSelectedDay((day) => ({
-      ...day,
-      [collection]: day[collection].filter((item) => item.id !== itemId),
-    }))
-  }
-
-  const deleteQuickItem = (collection: 'transportation' | 'itinerary' | 'meals', itemId: string) => {
-    deleteItem(collection, itemId)
-    setQuickEditTarget((current) => (current?.itemId === itemId ? null : current))
-    setToast('已刪除這一步')
-  }
-
-  const deleteDayLink = (linkId: string) => {
-    updateSelectedDay((day) => ({
-      ...day,
-      links: day.links.filter((link) => link.id !== linkId),
-    }))
-  }
-
-  const deleteItemLink = (
-    collection: 'transportation' | 'itinerary' | 'meals' | 'notes' | 'planB',
-    itemId: string,
-    linkId: string,
-  ) => {
-    updateSelectedDay((day) => ({
-      ...day,
-      [collection]: day[collection].map((item) =>
-        item.id === itemId
-          ? {
-              ...item,
-              links: (item.links ?? []).filter((link) => link.id !== linkId),
-            }
-          : item,
-      ),
-    }))
-  }
-
-  const moveItem = (
-    collection: 'transportation' | 'itinerary' | 'meals' | 'notes' | 'planB',
-    index: number,
-    direction: 'up' | 'down',
-  ) => {
-    updateSelectedDay((day) => {
-      switch (collection) {
-        case 'transportation':
-          return { ...day, transportation: reorderList(day.transportation, index, direction) }
-        case 'itinerary':
-          return { ...day, itinerary: reorderList(day.itinerary, index, direction) }
-        case 'meals':
-          return { ...day, meals: reorderList(day.meals, index, direction) }
-        case 'notes':
-          return { ...day, notes: reorderList(day.notes, index, direction) }
-        case 'planB':
-          return { ...day, planB: reorderList(day.planB, index, direction) }
-      }
-    })
-  }
-
-  const moveQuickItem = (
-    collection: 'transportation' | 'itinerary' | 'meals',
-    itemId: string,
-    direction: 'up' | 'down',
-  ) => {
-    if (!selectedDay) return
-    const index = selectedDay[collection].findIndex((item) => item.id === itemId)
-    if (index < 0) return
-    moveItem(collection, index, direction)
-    setToast(direction === 'up' ? '已上移' : '已下移')
-  }
-
-  const addDay = () => {
-    setTrip((current) => {
-      const nextDay = defaultNewDay(current.days.length + 1)
-      setSelectedDayId(nextDay.id)
-      return { ...current, days: [...current.days, nextDay] }
-    })
-  }
-
-  const deleteCurrentDay = () => {
-    if (!selectedDay || trip.days.length <= 1) return
-
-    setTrip((current) => {
-      const remainingDays = current.days
-        .filter((day) => day.id !== selectedDay.id)
-        .map((day, index) => ({ ...day, dayNumber: index + 1 }))
-
-      setSelectedDayId(remainingDays[0]?.id ?? '')
-      return { ...current, days: remainingDays }
-    })
-  }
-
-  const exportJson = () => {
-    const blob = new Blob([JSON.stringify(trip, null, 2)], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = 'trip-manager-backup.json'
-    link.click()
-    URL.revokeObjectURL(url)
-  }
-
-  const importJson = async (file: File | null) => {
-    if (!file) return
-    const text = await file.text()
-    const parsed = JSON.parse(text) as typeof trip
-    setTrip(parsed)
-    setSelectedDayId(parsed.days[0]?.id ?? '')
-    setToast('已匯入 itinerary')
-  }
-
-  const addFootprint = (footprint: Footprint) => {
-    let added = false
-
-    setFootprints((current) => {
-      if (
-        footprint.relatedItemId &&
-        current.some(
-          (entry) =>
-            entry.tripId === footprint.tripId &&
-            entry.relatedDayId === footprint.relatedDayId &&
-            entry.relatedItemId === footprint.relatedItemId,
-        )
-      ) {
-        return current
-      }
-
-      added = true
-      return [footprint, ...current]
-    })
-
-    setToast(added ? '已加入足跡' : '這個地點已經在足跡裡')
-  }
-
-  const updateFootprint = (footprintId: string, updater: (footprint: Footprint) => Footprint) => {
-    setFootprints((current) =>
-      current.map((footprint) => (footprint.id === footprintId ? updater(footprint) : footprint)),
-    )
-  }
-
-  const deleteFootprint = (footprintId: string) => {
-    setFootprints((current) => current.filter((footprint) => footprint.id !== footprintId))
-    setToast('已刪除足跡')
-  }
-
-  const addItemToFootprint = (
-    collection: 'transportation' | 'itinerary' | 'meals',
-    itemId: string,
-  ) => {
-    if (!selectedDay) return
-    const item = selectedDay[collection].find((entry) => entry.id === itemId)
-    if (!item) return
-    addFootprint(buildFootprintFromItem({ trip, day: selectedDay, item, collection }))
-  }
-
-  const isInFootprints = (
-    _collection: 'transportation' | 'itinerary' | 'meals',
-    itemId: string,
-  ) =>
-    footprints.some(
-      (footprint) =>
-        footprint.tripId === trip.id &&
-        footprint.relatedDayId === selectedDay?.id &&
-        footprint.relatedItemId === itemId,
-    )
-
-  const exportFootprintsJson = () => {
-    const blob = new Blob([JSON.stringify(footprints, null, 2)], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = 'footprints-backup.json'
-    link.click()
-    URL.revokeObjectURL(url)
-  }
-
-  const importFootprintsJson = async (file: File | null) => {
-    if (!file) return
-    const text = await file.text()
-    const parsed = JSON.parse(text) as Footprint[]
-    setFootprints(parsed)
-    setToast('已匯入 footprints')
-  }
-
-  const cities = Array.from(new Set(trip.days.flatMap((day) => day.city.split(' / ')).filter(Boolean)))
-  const overallProgress = getOverallProgress(trip)
-
   return (
     <AppShell>
-      <div>
-        <div className="space-y-4">
-          {activeTab === 'days' ? (
-            <>
-              <Toolbar
-                query={query}
-                city={cityFilter}
-                category={categoryFilter}
-                hasPlanBOnly={hasPlanBOnly}
-                hasLinksOnly={hasLinksOnly}
-                editMode={editMode}
-                cities={cities}
-                onQueryChange={setQuery}
-                onCityChange={setCityFilter}
-                onCategoryChange={setCategoryFilter}
-                onPlanBToggle={() => setHasPlanBOnly((value) => !value)}
-                onLinksToggle={() => setHasLinksOnly((value) => !value)}
-                onEditToggle={() => setEditMode((value) => !value)}
-                onTodayMode={() => setActiveTab('today')}
-                onExportJson={exportJson}
-                onImportJson={importJson}
-                onPrint={() => window.print()}
-              />
-              <DayNavigator
-                days={filteredDays}
-                selectedDayId={selectedDay?.id ?? ''}
-                onSelectDay={setSelectedDayId}
-                onAddDay={addDay}
-                onDeleteDay={deleteCurrentDay}
-                editMode={editMode}
-                getProgress={getDayProgress}
-              />
-            </>
-          ) : null}
+      {screen === 'home' || !selectedTrip ? (
+        <TripsHomePage trips={store.trips} onOpenTrip={handleOpenTrip} onAddTrip={handleAddTrip} />
+      ) : null}
+
+      {screen === 'trip' && selectedTrip ? (
+        <TripDetailPage
+          trip={selectedTrip}
+          activeTab={activeTab === 'home' ? 'itinerary' : activeTab}
+          footprints={footprints}
+          expenses={store.expenses}
+          memories={store.memories}
+          finalChecks={selectedTrip.finalChecks}
+          packingChecklist={[...selectedTrip.packingChecklist, ...selectedTrip.packingZones]}
+          onBack={() => {
+            setScreen('home')
+            setActiveTab('home')
+          }}
+          onChangeTab={(tab) => {
+            setActiveTab(tab)
+            setScreen('trip')
+          }}
+          onOpenDay={(dayId) => {
+            setSelectedDayId(dayId)
+            setScreen('day')
+            setActiveTab('itinerary')
+          }}
+          onAddExpense={addExpense}
+          onAddMemory={addMemory}
+        />
+      ) : null}
+
+      {screen === 'day' && selectedDay ? (
+        <div onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
+          <DayTimelinePage
+            day={selectedDay}
+            onBack={() => setScreen('trip')}
+            onPrevDay={() => selectRelativeDay('prev')}
+            onNextDay={() => selectRelativeDay('next')}
+            onOpenEvent={(collection, itemId) => setEventTarget({ collection, itemId })}
+            onToggleDone={toggleDone}
+          />
         </div>
+      ) : null}
 
-        <div className="mt-4 space-y-5">
-          {activeTab === 'today' && selectedDay ? (
-            <main onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
-              <PageHeader title="Today" emoji="🧭" subtitle="現在要做什麼" meta={`${selectedDay.city} · ${selectedDay.date}`} />
-              <TodayView
-                day={selectedDay}
-                onToggleDone={(collection, itemId) => toggleTrackableItem(collection, itemId, 'isDone')}
-                onEditItem={(collection, itemId) => setQuickEditTarget({ collection, itemId })}
-                onAddItem={addQuickItem}
-              />
-            </main>
-          ) : null}
+      <BottomNav activeTab={activeBottomTab} onChange={handleBottomNav} />
 
-          {activeTab === 'days' ? (
-            selectedDay ? (
-              <main className="space-y-5" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
-                <PageHeader title="Days" emoji="📅" subtitle="完整每日行程" meta="Swipe 左右切換 day，所有內容以 block 呈現" />
-                <DailyDetail
-                  day={selectedDay}
-                  categoryFilter={categoryFilter}
-                  query={deferredQuery}
-                  onToggleDone={(collection, itemId) => toggleTrackableItem(collection, itemId, 'isDone')}
-                  onToggleStar={(collection, itemId) => toggleTrackableItem(collection, itemId, 'isStarred')}
-                  onEditItem={(collection, itemId) => setQuickEditTarget({ collection, itemId })}
-                  onAddItem={addQuickItem}
-                  onDeleteItem={deleteQuickItem}
-                  onMoveItem={moveQuickItem}
-                  onAddNote={() => {
-                    addNote()
-                    setToast('已新增備註')
-                  }}
-                  onUpdateNote={(itemId, field, value) => updateNoteField(itemId, field, value)}
-                  onDeleteNote={(itemId) => {
-                    deleteItem('notes', itemId)
-                    setToast('已刪除備註')
-                  }}
-                  onAddPlanB={() => {
-                    addPlanB()
-                    setToast('已新增 Plan B')
-                  }}
-                  onUpdatePlanB={(itemId, field, value) => updatePlanBField(itemId, field, value)}
-                  onDeletePlanB={(itemId) => {
-                    deleteItem('planB', itemId)
-                    setToast('已刪除 Plan B')
-                  }}
-                  onAddLink={() => {
-                    addDayLink()
-                    setToast('已新增連結')
-                  }}
-                  onUpdateLink={(linkId, field, value) => updateDayLink(linkId, field, value)}
-                  onDeleteLink={(linkId) => {
-                    deleteDayLink(linkId)
-                    setToast('已刪除連結')
-                  }}
-                  onAddToFootprint={addItemToFootprint}
-                  isInFootprints={isInFootprints}
-                />
+      {screen === 'home' ? <FloatingActionButton label="New Trip" onClick={handleAddTrip} /> : null}
+      {screen === 'trip' && activeTab === 'itinerary' ? <FloatingActionButton label="Add Day" onClick={handleAddDay} /> : null}
+      {screen === 'trip' && activeTab === 'expenses' ? <FloatingActionButton label="Add Expense" onClick={addExpense} /> : null}
+      {screen === 'trip' && activeTab === 'memories' ? <FloatingActionButton label="Add Memory" onClick={addMemory} /> : null}
+      {screen === 'day' ? <FloatingActionButton label="Add Event" onClick={() => handleAddEvent('itinerary')} /> : null}
 
-                {editMode ? (
-                  <EditModePanel
-                    day={selectedDay}
-                    onDayChange={updateDayField}
-                    onTimelineChange={updateTimelineField}
-                    onMealChange={updateMealField}
-                    onNoteChange={updateNoteField}
-                    onPlanBChange={updatePlanBField}
-                    onDayLinkChange={updateDayLink}
-                    onItemLinkChange={updateNestedItemLinks}
-                    onAddTimelineItem={addTimelineItem}
-                    onAddMeal={addMeal}
-                    onAddNote={addNote}
-                    onAddPlanB={addPlanB}
-                    onAddDayLink={addDayLink}
-                    onAddItemLink={addItemLink}
-                    onDeleteItem={deleteItem}
-                    onDeleteDayLink={deleteDayLink}
-                    onDeleteItemLink={deleteItemLink}
-                    onMoveItem={moveItem}
-                  />
-                ) : null}
-              </main>
-            ) : (
-              <EmptyState title="沒有符合條件的 day" description="試吓清除搜尋或篩選，再重新選擇。" />
-            )
-          ) : null}
-
-          {activeTab === 'checklist' ? (
-            <>
-              <PageHeader title="Checklist" emoji="✅" subtitle="出發前與旅行中的任務管理" />
-              <ChecklistPanel
-                finalChecks={trip.finalChecks}
-                packingChecklist={trip.packingChecklist}
-                packingZones={trip.packingZones}
-                onToggle={updateChecklistGroup}
-              />
-            </>
-          ) : null}
-
-          {activeTab === 'footprints' ? (
-            <>
-              <PageHeader title="Footprints" emoji="🧭" subtitle="旅行足跡與記憶資料庫" />
-              <FootprintsPage
-                trip={trip}
-                footprints={footprints}
-                onAdd={addFootprint}
-                onUpdate={updateFootprint}
-                onDelete={deleteFootprint}
-                onImport={importFootprintsJson}
-                onExport={exportFootprintsJson}
-              />
-            </>
-          ) : null}
-
-          {activeTab === 'more' ? (
-            <>
-              <PageHeader title="More" emoji="⚙️" subtitle="低頻功能、總覽與資料管理" />
-              <div className="space-y-5">
-                <SectionBlock title="Trip Overview" subtitle="旅程總覽與櫻花預測" defaultOpen>
-                  <OverviewPanel trip={trip} overallProgress={overallProgress} />
-                </SectionBlock>
-                <SectionBlock title="Shopping" subtitle="購物與手信建議" defaultOpen={false}>
-                  <ShoppingPanel suggestions={trip.shoppingSuggestions} futureFeatures={trip.futureFeatures} />
-                </SectionBlock>
-                <SectionBlock title="Backup & Data" subtitle="匯入、匯出與 raw data" defaultOpen={false}>
-                  <div className="flex flex-wrap gap-2">
-                    <button onClick={exportJson} className="rounded-full border border-slate bg-white px-4 py-2 text-[14px] font-medium text-ink">
-                      匯出 JSON
-                    </button>
-                    <button onClick={exportFootprintsJson} className="rounded-full border border-slate bg-white px-4 py-2 text-[14px] font-medium text-ink">
-                      匯出 Footprints
-                    </button>
-                  </div>
-                </SectionBlock>
-              </div>
-            </>
-          ) : null}
-        </div>
-      </div>
+      <EventDetailSheet
+        open={Boolean(eventTarget && eventItem)}
+        item={eventItem}
+        collection={eventTarget?.collection ?? null}
+        onClose={() => setEventTarget(null)}
+        onToggleStar={() => {
+          if (!eventTarget) return
+          toggleStar(eventTarget.collection, eventTarget.itemId)
+        }}
+        onAddFootprint={
+          eventTarget
+            ? () => addFootprintFromEvent(eventTarget.collection, eventTarget.itemId)
+            : undefined
+        }
+        onSave={(updates) => {
+          if (!eventTarget) return
+          saveEvent(eventTarget.collection, eventTarget.itemId, updates)
+        }}
+      />
 
       {toast ? (
-        <div className="bottom-safe fixed inset-x-0 bottom-24 z-50 px-4">
-          <div className="mx-auto max-w-sm rounded-full bg-ink px-4 py-3 text-center text-sm font-medium text-white shadow-card">
+        <div className="bottom-safe fixed inset-x-0 bottom-[96px] z-50 px-4">
+          <div className="mx-auto max-w-[360px] rounded-full bg-ink px-4 py-3 text-center text-[13px] font-medium text-white shadow-lg">
             {toast}
           </div>
         </div>
       ) : null}
-
-      <QuickEditSheet
-        open={Boolean(quickEditTarget && quickEditItem)}
-        collection={quickEditTarget?.collection ?? null}
-        item={quickEditItem}
-        onClose={() => setQuickEditTarget(null)}
-        onTimelineChange={(collection, itemId, field, value) =>
-          updateTimelineField(collection, itemId, field, value)
-        }
-        onMealChange={(itemId, field, value) => updateMealField(itemId, field, value)}
-      />
-
-      <BottomNav activeTab={activeTab} onChange={setActiveTab} />
     </AppShell>
   )
 }

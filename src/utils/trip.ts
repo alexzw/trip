@@ -1,4 +1,4 @@
-import type { FilterCategory, MealItem, TimelineItem, TripData, TripDay } from '../types'
+import type { ExpenseItem, FilterCategory, MealItem, MemoryEntry, TimelineItem, TripData, TripDay } from '../types'
 
 const includesQuery = (source: string | undefined, query: string) =>
   (source ?? '').toLowerCase().includes(query)
@@ -254,4 +254,64 @@ export function reorderList<T>(items: T[], index: number, direction: 'up' | 'dow
   const [moved] = copy.splice(index, 1)
   copy.splice(nextIndex, 0, moved)
   return copy
+}
+
+export function getTripStatus(trip: TripData) {
+  const dates = trip.days.map((day) => day.date).filter(Boolean).sort()
+  if (dates.length === 0) return 'draft'
+
+  const today = new Date().toISOString().slice(0, 10)
+  if (today < dates[0]) return 'upcoming'
+  if (today > dates[dates.length - 1]) return 'completed'
+  return 'ongoing'
+}
+
+export function getTripDateMeta(trip: TripData) {
+  const dates = trip.days.map((day) => day.date).filter(Boolean).sort()
+  if (dates.length === 0) {
+    return {
+      start: '',
+      end: '',
+      totalDays: trip.days.length,
+    }
+  }
+
+  return {
+    start: dates[0],
+    end: dates[dates.length - 1],
+    totalDays: trip.days.length,
+  }
+}
+
+export function formatDateRange(start?: string, end?: string) {
+  if (!start && !end) return '未設定日期'
+  if (start && !end) return formatDisplayDate(start)
+  if (!start && end) return formatDisplayDate(end)
+  return `${formatDisplayDate(start!)} → ${formatDisplayDate(end!)}`
+}
+
+export function groupExpensesByDay(expenses: ExpenseItem[], tripId: string) {
+  return expenses
+    .filter((item) => item.tripId === tripId)
+    .reduce<Record<string, ExpenseItem[]>>((acc, item) => {
+      const key = item.date || '未指定日期'
+      acc[key] = [...(acc[key] ?? []), item]
+      return acc
+    }, {})
+}
+
+export function getTripExpenseTotal(expenses: ExpenseItem[], tripId: string) {
+  return expenses
+    .filter((item) => item.tripId === tripId)
+    .reduce((sum, item) => sum + item.amount, 0)
+}
+
+export function groupMemoriesByDay(memories: MemoryEntry[], tripId: string) {
+  return memories
+    .filter((item) => item.tripId === tripId)
+    .reduce<Record<string, MemoryEntry[]>>((acc, item) => {
+      const key = item.date || '未指定日期'
+      acc[key] = [...(acc[key] ?? []), item]
+      return acc
+    }, {})
 }

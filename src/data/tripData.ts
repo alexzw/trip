@@ -1,4 +1,4 @@
-import type { TripData } from '../types'
+import type { MemoryEntry, TripData, TripStore } from '../types'
 
 const mapLink = (id: string, label: string, url: string) => ({
   id,
@@ -1162,6 +1162,40 @@ export const initialTripData: TripData = {
 export const defaultTripData = (): TripData =>
   JSON.parse(JSON.stringify(initialTripData)) as TripData
 
+const initialMemories: MemoryEntry[] = [
+  {
+    id: 'memory-day3',
+    tripId: initialTripData.id,
+    dayId: 'day-3',
+    date: '2026-04-02',
+    title: '山崎川的第一輪櫻花',
+    caption: '花況很值得慢慢行，拍照比想像中順。',
+    note: '如果天氣好，這天可以當作整個旅程最舒服的散步段落。',
+    emoji: '🌸',
+    placeName: '山崎川',
+  },
+  {
+    id: 'memory-day7',
+    tripId: initialTripData.id,
+    dayId: 'day-7',
+    date: '2026-04-06',
+    title: '京都賞櫻日',
+    caption: '哲學之道很適合留一張全家合照。',
+    note: '這天的節奏以慢行和拍照為主，適合用作回憶頁的代表日。',
+    emoji: '🏯',
+    placeName: '哲學之道',
+  },
+]
+
+export const initialTripStore: TripStore = {
+  trips: [defaultTripData()],
+  expenses: [],
+  memories: initialMemories,
+}
+
+export const defaultTripStore = (): TripStore =>
+  JSON.parse(JSON.stringify(initialTripStore)) as TripStore
+
 export const defaultNewDay = (dayNumber: number): TripData['days'][number] => ({
   id: `day-${dayNumber}-${crypto.randomUUID()}`,
   dayNumber,
@@ -1179,4 +1213,26 @@ export const defaultNewDay = (dayNumber: number): TripData['days'][number] => ({
   notes: [],
   links: [],
   planB: [],
+})
+
+export const defaultNewTrip = (): TripData => ({
+  id: `trip-${crypto.randomUUID()}`,
+  title: '新的旅行',
+  dateRange: '',
+  travelers: [],
+  route: [],
+  cityTags: [],
+  sakuraForecast: [],
+  shoppingSuggestions: [],
+  finalChecks: [],
+  packingChecklist: [],
+  packingZones: [],
+  days: [
+    {
+      ...defaultNewDay(1),
+      id: `day-1-${crypto.randomUUID()}`,
+      title: '抵達日',
+    },
+  ],
+  futureFeatures: [],
 })
