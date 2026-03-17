@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,8 +6,8 @@
 
 @layer base {
   :root {
-    color: #101420;
-    background: #f2f4f8;
+    color: #111827;
+    background: #F8F7F4;
     font-synthesis: none;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
@@ -29,8 +29,8 @@
     @apply bg-paper-glow font-sans text-ink;
     -webkit-tap-highlight-color: transparent;
     background:
-      radial-gradient(circle at top, rgba(10, 132, 255, 0.12), transparent 28%),
-      linear-gradient(180deg, #fbfcfe 0%, #f2f4f8 44%, #edf1f6 100%);
+      radial-gradient(circle at top, rgba(232, 175, 166, 0.14), transparent 26%),
+      linear-gradient(180deg, #fcfbf8 0%, #F8F7F4 48%, #f3f0ea 100%);
   }
 
   #root {
@@ -51,34 +51,42 @@
 
 @layer components {
   .panel {
-    @apply rounded-[26px] border border-white/80 bg-white/75 shadow-card backdrop-blur-xl sm:rounded-[30px];
+    @apply rounded-2xl border border-slate bg-white shadow-card sm:rounded-2xl;
   }
 
   .section-title {
-    @apply font-display text-xl font-semibold tracking-tight text-ink;
+    @apply font-display text-[20px] font-bold tracking-tight text-ink;
   }
 
   .muted {
-    @apply text-sm text-mist;
+    @apply text-[14px] text-mist;
   }
 
   .chip {
-    @apply inline-flex items-center gap-2 rounded-full border border-slate bg-white px-3 py-1 text-xs font-medium text-ink/75;
+    @apply inline-flex items-center gap-2 rounded-full border border-slate bg-white px-3 py-1 text-[12px] font-medium text-ink/80;
   }
 
   .glass-card {
-    @apply rounded-[24px] border border-white/80 bg-white/70 backdrop-blur-xl;
+    @apply rounded-2xl border border-slate bg-white/95;
   }
 
   .metric-card {
-    @apply rounded-[24px] border border-white/80 bg-gradient-to-br from-white to-[#f7f9fc] p-4 shadow-card;
+    @apply rounded-2xl border border-slate bg-white p-4 shadow-card;
   }
 
   .flight-grid {
     background-image:
-      linear-gradient(rgba(10,132,255,0.04) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(10,132,255,0.04) 1px, transparent 1px);
+      linear-gradient(rgba(47,93,80,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(47,93,80,0.03) 1px, transparent 1px);
     background-size: 24px 24px;
+  }
+
+  .memory-card {
+    @apply rounded-2xl border border-[#F1E6E3] bg-[#FFFDFB] shadow-card;
+  }
+
+  .touch-card {
+    @apply rounded-2xl border border-slate bg-white p-4 shadow-card;
   }
 
   .mobile-shell {
@@ -98,7 +106,7 @@
 @layer utilities {
   .scrollbar-thin {
     scrollbar-width: thin;
-    scrollbar-color: rgba(10, 132, 255, 0.25) transparent;
+    scrollbar-color: rgba(47, 93, 80, 0.25) transparent;
   }
 
   .scrollbar-thin::-webkit-scrollbar {
@@ -107,7 +115,7 @@
   }
 
   .scrollbar-thin::-webkit-scrollbar-thumb {
-    background: rgba(10, 132, 255, 0.22);
+    background: rgba(47, 93, 80, 0.22);
     border-radius: 999px;
   }
 }
