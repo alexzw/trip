@@ -91,7 +91,7 @@
 
   .mobile-shell {
     padding-top: max(1rem, env(safe-area-inset-top));
-    padding-bottom: max(10rem, env(safe-area-inset-bottom) + 8rem);
+    padding-bottom: max(2rem, env(safe-area-inset-bottom) + 1rem);
   }
 
   .bottom-safe {

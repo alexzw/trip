@@ -16,7 +16,7 @@ const tabs: Array<{ id: MainTab; label: string; icon: LucideIcon }> = [
 
 export function BottomNav({ activeTab, onChange }: BottomNavProps) {
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-slate bg-white/96 px-2 pt-2 shadow-[0_-6px_18px_rgba(17,24,39,0.05)] backdrop-blur md:px-4">
+    <nav className="fixed inset-x-0 bottom-0 z-40 min-h-[88px] border-t border-slate bg-white/96 px-2 pt-2 shadow-[0_-6px_18px_rgba(17,24,39,0.05)] backdrop-blur md:px-4">
       <div className="mx-auto grid max-w-3xl grid-cols-5 gap-1">
         {tabs.map((tab) => {
           const Icon = tab.icon
@@ -39,7 +39,7 @@ export function BottomNav({ activeTab, onChange }: BottomNavProps) {
           )
         })}
       </div>
-      <div className="h-[max(env(safe-area-inset-bottom),8px)]" />
+      <div className="h-[max(env(safe-area-inset-bottom),12px)]" />
     </nav>
   )
 }
