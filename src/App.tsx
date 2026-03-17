@@ -269,6 +269,51 @@ function App() {
     }))
   }
 
+  const addQuickItem = (collection: 'transportation' | 'itinerary' | 'meals') => {
+    const newId = crypto.randomUUID()
+
+    updateSelectedDay((day) => {
+      if (collection === 'meals') {
+        return {
+          ...day,
+          meals: [
+            ...day.meals,
+            {
+              id: newId,
+              time: '',
+              title: '',
+              description: '',
+              category: 'meal',
+              isDone: false,
+              isStarred: false,
+            },
+          ],
+        }
+      }
+
+      return {
+        ...day,
+        [collection]: [
+          ...day[collection],
+          {
+            id: newId,
+            time: '',
+            endTime: '',
+            title: '',
+            description: '',
+            locationName: '',
+            category: collection === 'transportation' ? 'transport' : 'activity',
+            isDone: false,
+            isStarred: false,
+          },
+        ],
+      }
+    })
+
+    setQuickEditTarget({ collection, itemId: newId })
+    setToast('已新增新項目')
+  }
+
   const addNote = () => {
     updateSelectedDay((day) => ({
       ...day,
@@ -317,6 +362,12 @@ function App() {
     }))
   }
 
+  const deleteQuickItem = (collection: 'transportation' | 'itinerary' | 'meals', itemId: string) => {
+    deleteItem(collection, itemId)
+    setQuickEditTarget((current) => (current?.itemId === itemId ? null : current))
+    setToast('已刪除這一步')
+  }
+
   const deleteDayLink = (linkId: string) => {
     updateSelectedDay((day) => ({
       ...day,
@@ -361,6 +412,18 @@ function App() {
           return { ...day, planB: reorderList(day.planB, index, direction) }
       }
     })
+  }
+
+  const moveQuickItem = (
+    collection: 'transportation' | 'itinerary' | 'meals',
+    itemId: string,
+    direction: 'up' | 'down',
+  ) => {
+    if (!selectedDay) return
+    const index = selectedDay[collection].findIndex((item) => item.id === itemId)
+    if (index < 0) return
+    moveItem(collection, index, direction)
+    setToast(direction === 'up' ? '已上移' : '已下移')
   }
 
   const addDay = () => {
@@ -538,6 +601,9 @@ function App() {
                   onToggleDone={(collection, itemId) => toggleTrackableItem(collection, itemId, 'isDone')}
                   onToggleStar={(collection, itemId) => toggleTrackableItem(collection, itemId, 'isStarred')}
                   onEditItem={(collection, itemId) => setQuickEditTarget({ collection, itemId })}
+                  onAddItem={addQuickItem}
+                  onDeleteItem={deleteQuickItem}
+                  onMoveItem={moveQuickItem}
                   onAddToFootprint={addItemToFootprint}
                   isInFootprints={isInFootprints}
                 />

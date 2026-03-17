@@ -1,12 +1,16 @@
 import { useState, type ReactNode } from 'react'
 import {
+  ArrowDown,
+  ArrowUp,
   ChevronDown,
   ChevronUp,
   ExternalLink,
   Footprints,
   PencilLine,
+  Plus,
   Star,
   StarOff,
+  Trash2,
 } from 'lucide-react'
 import type { FilterCategory, MealItem, TimelineItem, TripDay } from '../types'
 import { formatDisplayDate, formatTimeRange } from '../utils/trip'
@@ -18,6 +22,9 @@ interface DailyDetailProps {
   onToggleDone: (collection: 'transportation' | 'itinerary' | 'meals', itemId: string) => void
   onToggleStar: (collection: 'transportation' | 'itinerary' | 'meals', itemId: string) => void
   onEditItem: (collection: 'transportation' | 'itinerary' | 'meals', itemId: string) => void
+  onAddItem: (collection: 'transportation' | 'itinerary' | 'meals') => void
+  onDeleteItem: (collection: 'transportation' | 'itinerary' | 'meals', itemId: string) => void
+  onMoveItem: (collection: 'transportation' | 'itinerary' | 'meals', itemId: string, direction: 'up' | 'down') => void
   onAddToFootprint: (collection: 'transportation' | 'itinerary' | 'meals', itemId: string) => void
   isInFootprints: (collection: 'transportation' | 'itinerary' | 'meals', itemId: string) => boolean
 }
@@ -98,6 +105,9 @@ function TimelineRows({
   onToggleDone,
   onToggleStar,
   onEditItem,
+  onAddItem,
+  onDeleteItem,
+  onMoveItem,
   onAddToFootprint,
   isInFootprints,
 }: {
@@ -108,6 +118,9 @@ function TimelineRows({
   onToggleDone: (collection: 'transportation' | 'itinerary' | 'meals', itemId: string) => void
   onToggleStar: (collection: 'transportation' | 'itinerary' | 'meals', itemId: string) => void
   onEditItem: (collection: 'transportation' | 'itinerary' | 'meals', itemId: string) => void
+  onAddItem: (collection: 'transportation' | 'itinerary' | 'meals') => void
+  onDeleteItem: (collection: 'transportation' | 'itinerary' | 'meals', itemId: string) => void
+  onMoveItem: (collection: 'transportation' | 'itinerary' | 'meals', itemId: string, direction: 'up' | 'down') => void
   onAddToFootprint: (collection: 'transportation' | 'itinerary' | 'meals', itemId: string) => void
   isInFootprints: (collection: 'transportation' | 'itinerary' | 'meals', itemId: string) => boolean
 }) {
@@ -127,11 +140,29 @@ function TimelineRows({
   })
 
   if (!filteredItems.length) {
-    return <div className="rounded-[24px] bg-white/5 p-4 text-sm text-mist">沒有符合條件的項目。</div>
+    return (
+      <div className="space-y-3">
+        <div className="rounded-[24px] bg-[#f7f9fc] p-4 text-sm text-mist">沒有符合條件的項目。</div>
+        <button
+          onClick={() => onAddItem(collection)}
+          className="inline-flex items-center gap-2 rounded-full border border-pine/10 bg-pine/10 px-4 py-2 text-sm font-semibold text-pine"
+        >
+          <Plus size={14} />
+          新增一項
+        </button>
+      </div>
+    )
   }
 
   return (
     <div className="space-y-3">
+      <button
+        onClick={() => onAddItem(collection)}
+        className="inline-flex items-center gap-2 rounded-full border border-pine/10 bg-pine/10 px-4 py-2 text-sm font-semibold text-pine"
+      >
+        <Plus size={14} />
+        新增一項
+      </button>
       {filteredItems.map((item) => (
         <article
           key={item.id}
@@ -196,6 +227,27 @@ function TimelineRows({
                 編輯
               </button>
               <button
+                onClick={() => onMoveItem(collection, item.id, 'up')}
+                className="inline-flex items-center gap-2 rounded-full border border-slate bg-white px-3 py-2 text-xs font-semibold text-ink"
+              >
+                <ArrowUp size={13} />
+                上移
+              </button>
+              <button
+                onClick={() => onMoveItem(collection, item.id, 'down')}
+                className="inline-flex items-center gap-2 rounded-full border border-slate bg-white px-3 py-2 text-xs font-semibold text-ink"
+              >
+                <ArrowDown size={13} />
+                下移
+              </button>
+              <button
+                onClick={() => onDeleteItem(collection, item.id)}
+                className="inline-flex items-center gap-2 rounded-full border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-500"
+              >
+                <Trash2 size={13} />
+                刪除
+              </button>
+              <button
                 onClick={() => onAddToFootprint(collection, item.id)}
                 disabled={isInFootprints(collection, item.id)}
                 className={`inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs font-medium transition ${
@@ -223,6 +275,9 @@ export function DailyDetail({
   onToggleDone,
   onToggleStar,
   onEditItem,
+  onAddItem,
+  onDeleteItem,
+  onMoveItem,
   onAddToFootprint,
   isInFootprints,
 }: DailyDetailProps) {
@@ -295,6 +350,9 @@ export function DailyDetail({
           onToggleDone={onToggleDone}
           onToggleStar={onToggleStar}
           onEditItem={onEditItem}
+          onAddItem={onAddItem}
+          onDeleteItem={onDeleteItem}
+          onMoveItem={onMoveItem}
           onAddToFootprint={onAddToFootprint}
           isInFootprints={isInFootprints}
         />
@@ -315,6 +373,9 @@ export function DailyDetail({
           onToggleDone={onToggleDone}
           onToggleStar={onToggleStar}
           onEditItem={onEditItem}
+          onAddItem={onAddItem}
+          onDeleteItem={onDeleteItem}
+          onMoveItem={onMoveItem}
           onAddToFootprint={onAddToFootprint}
           isInFootprints={isInFootprints}
         />
@@ -335,6 +396,9 @@ export function DailyDetail({
           onToggleDone={onToggleDone}
           onToggleStar={onToggleStar}
           onEditItem={onEditItem}
+          onAddItem={onAddItem}
+          onDeleteItem={onDeleteItem}
+          onMoveItem={onMoveItem}
           onAddToFootprint={onAddToFootprint}
           isInFootprints={isInFootprints}
         />
