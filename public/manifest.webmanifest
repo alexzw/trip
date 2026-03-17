@@ -1,0 +1,17 @@
+{
+  "name": "Trip Memory",
+  "short_name": "Trip Memory",
+  "description": "手機優先的家庭旅行行程與足跡管理工具",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f7f3ee",
+  "theme_color": "#f7f3ee",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

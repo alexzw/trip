@@ -1,0 +1,113 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color: #101420;
+    background: #f2f4f8;
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    margin: 0;
+    min-width: 320px;
+    min-height: 100vh;
+    @apply bg-paper-glow font-sans text-ink;
+    -webkit-tap-highlight-color: transparent;
+    background:
+      radial-gradient(circle at top, rgba(10, 132, 255, 0.12), transparent 28%),
+      linear-gradient(180deg, #fbfcfe 0%, #f2f4f8 44%, #edf1f6 100%);
+  }
+
+  #root {
+    min-height: 100vh;
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+  }
+
+  a {
+    color: inherit;
+  }
+}
+
+@layer components {
+  .panel {
+    @apply rounded-[26px] border border-white/80 bg-white/75 shadow-card backdrop-blur-xl sm:rounded-[30px];
+  }
+
+  .section-title {
+    @apply font-display text-xl font-semibold tracking-tight text-ink;
+  }
+
+  .muted {
+    @apply text-sm text-mist;
+  }
+
+  .chip {
+    @apply inline-flex items-center gap-2 rounded-full border border-slate bg-white px-3 py-1 text-xs font-medium text-ink/75;
+  }
+
+  .glass-card {
+    @apply rounded-[24px] border border-white/80 bg-white/70 backdrop-blur-xl;
+  }
+
+  .metric-card {
+    @apply rounded-[24px] border border-white/80 bg-gradient-to-br from-white to-[#f7f9fc] p-4 shadow-card;
+  }
+
+  .flight-grid {
+    background-image:
+      linear-gradient(rgba(10,132,255,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(10,132,255,0.04) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+
+  .mobile-shell {
+    padding-top: max(1rem, env(safe-area-inset-top));
+    padding-bottom: max(6.25rem, env(safe-area-inset-bottom) + 5rem);
+  }
+
+  .bottom-safe {
+    padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+  }
+
+  .top-safe {
+    top: max(0.75rem, env(safe-area-inset-top));
+  }
+}
+
+@layer utilities {
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(10, 132, 255, 0.25) transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    height: 8px;
+    width: 8px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: rgba(10, 132, 255, 0.22);
+    border-radius: 999px;
+  }
+}
