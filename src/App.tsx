@@ -1,12 +1,16 @@
 import { useDeferredValue, useEffect, useMemo, useState, type TouchEvent } from 'react'
+import { AppShell } from './components/AppShell'
 import { BottomNav } from './components/BottomNav'
 import { ChecklistPanel } from './components/ChecklistPanel'
 import { DailyDetail } from './components/DailyDetail'
 import { DayNavigator } from './components/DayNavigator'
 import { EditModePanel } from './components/EditModePanel'
+import { EmptyState } from './components/EmptyState'
 import { FootprintsPage } from './components/FootprintsPage'
 import { OverviewPanel } from './components/OverviewPanel'
+import { PageHeader } from './components/PageHeader'
 import { QuickEditSheet } from './components/QuickEditSheet'
+import { SectionBlock } from './components/SectionBlock'
 import { ShoppingPanel } from './components/ShoppingPanel'
 import { TodayView } from './components/TodayView'
 import { Toolbar } from './components/Toolbar'
@@ -543,8 +547,8 @@ function App() {
   const overallProgress = getOverallProgress(trip)
 
   return (
-    <div className="min-h-screen bg-paper-glow">
-      <div className="mobile-shell mx-auto max-w-[1500px] px-3 py-4 sm:px-6 lg:px-8">
+    <AppShell>
+      <div>
         <div className="space-y-4">
           {activeTab === 'days' ? (
             <>
@@ -583,6 +587,7 @@ function App() {
         <div className="mt-4 space-y-5">
           {activeTab === 'today' && selectedDay ? (
             <main onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
+              <PageHeader title="Today" subtitle="現在要做什麼" meta={`${selectedDay.city} · ${selectedDay.date}`} />
               <TodayView
                 day={selectedDay}
                 onToggleDone={(collection, itemId) => toggleTrackableItem(collection, itemId, 'isDone')}
@@ -595,6 +600,7 @@ function App() {
           {activeTab === 'days' ? (
             selectedDay ? (
               <main className="space-y-5" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
+                <PageHeader title="Days" subtitle="完整每日行程" meta="Swipe 左右切換 day，所有內容以 block 呈現" />
                 <DailyDetail
                   day={selectedDay}
                   categoryFilter={categoryFilter}
@@ -660,38 +666,59 @@ function App() {
                 ) : null}
               </main>
             ) : (
-              <section className="panel p-10 text-center text-sm text-ink/55">
-                沒有符合目前搜尋 / 篩選條件的 day。
-              </section>
+              <EmptyState title="沒有符合條件的 day" description="試吓清除搜尋或篩選，再重新選擇。" />
             )
           ) : null}
 
           {activeTab === 'checklist' ? (
-            <ChecklistPanel
-              finalChecks={trip.finalChecks}
-              packingChecklist={trip.packingChecklist}
-              packingZones={trip.packingZones}
-              onToggle={updateChecklistGroup}
-            />
+            <>
+              <PageHeader title="Checklist" subtitle="出發前與旅行中的任務管理" />
+              <ChecklistPanel
+                finalChecks={trip.finalChecks}
+                packingChecklist={trip.packingChecklist}
+                packingZones={trip.packingZones}
+                onToggle={updateChecklistGroup}
+              />
+            </>
           ) : null}
 
           {activeTab === 'footprints' ? (
-            <FootprintsPage
-              trip={trip}
-              footprints={footprints}
-              onAdd={addFootprint}
-              onUpdate={updateFootprint}
-              onDelete={deleteFootprint}
-              onImport={importFootprintsJson}
-              onExport={exportFootprintsJson}
-            />
+            <>
+              <PageHeader title="Footprints" subtitle="旅行足跡與記憶資料庫" />
+              <FootprintsPage
+                trip={trip}
+                footprints={footprints}
+                onAdd={addFootprint}
+                onUpdate={updateFootprint}
+                onDelete={deleteFootprint}
+                onImport={importFootprintsJson}
+                onExport={exportFootprintsJson}
+              />
+            </>
           ) : null}
 
           {activeTab === 'more' ? (
-            <div className="space-y-5">
-              <OverviewPanel trip={trip} overallProgress={overallProgress} />
-              <ShoppingPanel suggestions={trip.shoppingSuggestions} futureFeatures={trip.futureFeatures} />
-            </div>
+            <>
+              <PageHeader title="More" subtitle="低頻功能、總覽與資料管理" />
+              <div className="space-y-5">
+                <SectionBlock title="Trip Overview" subtitle="旅程總覽與櫻花預測" defaultOpen>
+                  <OverviewPanel trip={trip} overallProgress={overallProgress} />
+                </SectionBlock>
+                <SectionBlock title="Shopping" subtitle="購物與手信建議" defaultOpen={false}>
+                  <ShoppingPanel suggestions={trip.shoppingSuggestions} futureFeatures={trip.futureFeatures} />
+                </SectionBlock>
+                <SectionBlock title="Backup & Data" subtitle="匯入、匯出與 raw data" defaultOpen={false}>
+                  <div className="flex flex-wrap gap-2">
+                    <button onClick={exportJson} className="rounded-full border border-slate bg-white px-4 py-2 text-[14px] font-medium text-ink">
+                      匯出 JSON
+                    </button>
+                    <button onClick={exportFootprintsJson} className="rounded-full border border-slate bg-white px-4 py-2 text-[14px] font-medium text-ink">
+                      匯出 Footprints
+                    </button>
+                  </div>
+                </SectionBlock>
+              </div>
+            </>
           ) : null}
         </div>
       </div>
@@ -716,7 +743,7 @@ function App() {
       />
 
       <BottomNav activeTab={activeTab} onChange={setActiveTab} />
-    </div>
+    </AppShell>
   )
 }
 
