@@ -4,6 +4,7 @@ import {
   ChevronDown,
   ChevronUp,
   CloudSun,
+  Plus,
   PencilLine,
   ExternalLink,
   MapPinned,
@@ -24,6 +25,7 @@ interface TodayViewProps {
   day: TripDay
   onToggleDone: (collection: 'transportation' | 'itinerary' | 'meals', itemId: string) => void
   onEditItem: (collection: 'transportation' | 'itinerary' | 'meals', itemId: string) => void
+  onAddItem: (collection: 'transportation' | 'itinerary' | 'meals') => void
 }
 
 const iconByCollection: Record<'transportation' | 'itinerary' | 'meals', string> = {
@@ -56,7 +58,7 @@ function MiniLinkButton({ url, label }: { url?: string; label: string }) {
   )
 }
 
-export function TodayView({ day, onToggleDone, onEditItem }: TodayViewProps) {
+export function TodayView({ day, onToggleDone, onEditItem, onAddItem }: TodayViewProps) {
   const [essentialsOpen, setEssentialsOpen] = useState(false)
   const [now, setNow] = useState(() => Date.now())
 
@@ -91,6 +93,29 @@ export function TodayView({ day, onToggleDone, onEditItem }: TodayViewProps) {
             <div className="text-xs font-semibold uppercase tracking-[0.2em] text-pine/65">天氣</div>
             <div className="mt-1 text-sm font-medium text-ink/85">{day.weather}</div>
           </div>
+        </div>
+        <div className="mt-4 flex flex-wrap gap-2">
+          <button
+            onClick={() => onAddItem('itinerary')}
+            className="inline-flex items-center gap-2 rounded-full border border-pine/10 bg-pine/10 px-4 py-2 text-sm font-semibold text-pine"
+          >
+            <Plus size={14} />
+            加行程
+          </button>
+          <button
+            onClick={() => onAddItem('transportation')}
+            className="inline-flex items-center gap-2 rounded-full border border-slate bg-white px-4 py-2 text-sm font-semibold text-ink"
+          >
+            <Plus size={14} />
+            加交通
+          </button>
+          <button
+            onClick={() => onAddItem('meals')}
+            className="inline-flex items-center gap-2 rounded-full border border-slate bg-white px-4 py-2 text-sm font-semibold text-ink"
+          >
+            <Plus size={14} />
+            加餐飲
+          </button>
         </div>
       </section>
 

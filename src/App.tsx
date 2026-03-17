@@ -587,6 +587,7 @@ function App() {
                 day={selectedDay}
                 onToggleDone={(collection, itemId) => toggleTrackableItem(collection, itemId, 'isDone')}
                 onEditItem={(collection, itemId) => setQuickEditTarget({ collection, itemId })}
+                onAddItem={addQuickItem}
               />
             </main>
           ) : null}
@@ -604,6 +605,33 @@ function App() {
                   onAddItem={addQuickItem}
                   onDeleteItem={deleteQuickItem}
                   onMoveItem={moveQuickItem}
+                  onAddNote={() => {
+                    addNote()
+                    setToast('已新增備註')
+                  }}
+                  onUpdateNote={(itemId, field, value) => updateNoteField(itemId, field, value)}
+                  onDeleteNote={(itemId) => {
+                    deleteItem('notes', itemId)
+                    setToast('已刪除備註')
+                  }}
+                  onAddPlanB={() => {
+                    addPlanB()
+                    setToast('已新增 Plan B')
+                  }}
+                  onUpdatePlanB={(itemId, field, value) => updatePlanBField(itemId, field, value)}
+                  onDeletePlanB={(itemId) => {
+                    deleteItem('planB', itemId)
+                    setToast('已刪除 Plan B')
+                  }}
+                  onAddLink={() => {
+                    addDayLink()
+                    setToast('已新增連結')
+                  }}
+                  onUpdateLink={(linkId, field, value) => updateDayLink(linkId, field, value)}
+                  onDeleteLink={(linkId) => {
+                    deleteDayLink(linkId)
+                    setToast('已刪除連結')
+                  }}
                   onAddToFootprint={addItemToFootprint}
                   isInFootprints={isInFootprints}
                 />

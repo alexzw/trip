@@ -25,6 +25,15 @@ interface DailyDetailProps {
   onAddItem: (collection: 'transportation' | 'itinerary' | 'meals') => void
   onDeleteItem: (collection: 'transportation' | 'itinerary' | 'meals', itemId: string) => void
   onMoveItem: (collection: 'transportation' | 'itinerary' | 'meals', itemId: string, direction: 'up' | 'down') => void
+  onAddNote: () => void
+  onUpdateNote: (itemId: string, field: 'title' | 'content', value: string) => void
+  onDeleteNote: (itemId: string) => void
+  onAddPlanB: () => void
+  onUpdatePlanB: (itemId: string, field: 'title' | 'content', value: string) => void
+  onDeletePlanB: (itemId: string) => void
+  onAddLink: () => void
+  onUpdateLink: (linkId: string, field: 'label' | 'url', value: string) => void
+  onDeleteLink: (linkId: string) => void
   onAddToFootprint: (collection: 'transportation' | 'itinerary' | 'meals', itemId: string) => void
   isInFootprints: (collection: 'transportation' | 'itinerary' | 'meals', itemId: string) => boolean
 }
@@ -278,6 +287,15 @@ export function DailyDetail({
   onAddItem,
   onDeleteItem,
   onMoveItem,
+  onAddNote,
+  onUpdateNote,
+  onDeleteNote,
+  onAddPlanB,
+  onUpdatePlanB,
+  onDeletePlanB,
+  onAddLink,
+  onUpdateLink,
+  onDeleteLink,
   onAddToFootprint,
   isInFootprints,
 }: DailyDetailProps) {
@@ -411,12 +429,39 @@ export function DailyDetail({
         onToggle={() => toggleFold('notes')}
         count={filteredNotes.length}
       >
+        <button
+          onClick={onAddNote}
+          className="mb-3 inline-flex items-center gap-2 rounded-full border border-pine/10 bg-pine/10 px-4 py-2 text-sm font-semibold text-pine"
+        >
+          <Plus size={14} />
+          新增備註
+        </button>
         {filteredNotes.length ? (
           <div className="space-y-3">
             {filteredNotes.map((item) => (
               <article key={item.id} className="rounded-[24px] border border-slate bg-white p-4">
-                <div className="text-base font-semibold text-ink">{item.title}</div>
-                <p className="mt-2 text-sm leading-6 text-mist">{item.content}</p>
+                <div className="flex items-start justify-between gap-3">
+                  <input
+                    value={item.title}
+                    onChange={(event) => onUpdateNote(item.id, 'title', event.target.value)}
+                    placeholder="備註標題"
+                    className="w-full rounded-2xl border border-slate bg-[#f8fafd] px-3 py-2 text-sm font-semibold outline-none"
+                  />
+                  <button
+                    onClick={() => onDeleteNote(item.id)}
+                    className="rounded-full border border-red-200 bg-red-50 p-2 text-red-500"
+                    aria-label="刪除備註"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+                <textarea
+                  value={item.content}
+                  onChange={(event) => onUpdateNote(item.id, 'content', event.target.value)}
+                  placeholder="備註內容"
+                  rows={3}
+                  className="mt-3 w-full rounded-2xl border border-slate bg-[#f8fafd] px-3 py-2 text-sm leading-6 outline-none"
+                />
                 <LinkButtons items={item.links} />
               </article>
             ))}
@@ -433,12 +478,39 @@ export function DailyDetail({
         onToggle={() => toggleFold('planB')}
         count={filteredPlanB.length}
       >
+        <button
+          onClick={onAddPlanB}
+          className="mb-3 inline-flex items-center gap-2 rounded-full border border-gold/20 bg-[#fff7eb] px-4 py-2 text-sm font-semibold text-gold"
+        >
+          <Plus size={14} />
+          新增 Plan B
+        </button>
         {filteredPlanB.length ? (
           <div className="space-y-3">
             {filteredPlanB.map((item) => (
               <article key={item.id} className="rounded-[24px] border border-gold/20 bg-[#fff7eb] p-4">
-                <div className="text-base font-semibold text-ink">{item.title}</div>
-                <p className="mt-2 text-sm leading-6 text-mist">{item.content}</p>
+                <div className="flex items-start justify-between gap-3">
+                  <input
+                    value={item.title}
+                    onChange={(event) => onUpdatePlanB(item.id, 'title', event.target.value)}
+                    placeholder="Plan B 標題"
+                    className="w-full rounded-2xl border border-gold/20 bg-white px-3 py-2 text-sm font-semibold outline-none"
+                  />
+                  <button
+                    onClick={() => onDeletePlanB(item.id)}
+                    className="rounded-full border border-red-200 bg-red-50 p-2 text-red-500"
+                    aria-label="刪除 Plan B"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+                <textarea
+                  value={item.content}
+                  onChange={(event) => onUpdatePlanB(item.id, 'content', event.target.value)}
+                  placeholder="Plan B 內容"
+                  rows={3}
+                  className="mt-3 w-full rounded-2xl border border-gold/20 bg-white px-3 py-2 text-sm leading-6 outline-none"
+                />
                 <LinkButtons items={item.links} />
               </article>
             ))}
@@ -455,8 +527,42 @@ export function DailyDetail({
         onToggle={() => toggleFold('links')}
         count={filteredLinks.length}
       >
+        <button
+          onClick={onAddLink}
+          className="mb-3 inline-flex items-center gap-2 rounded-full border border-pine/10 bg-pine/10 px-4 py-2 text-sm font-semibold text-pine"
+        >
+          <Plus size={14} />
+          新增連結
+        </button>
         {filteredLinks.length ? (
-          <LinkButtons items={filteredLinks} />
+          <div className="space-y-3">
+            {filteredLinks.map((item) => (
+              <article key={item.id} className="rounded-[24px] border border-slate bg-white p-4">
+                <div className="grid gap-3 sm:grid-cols-[1fr_1.4fr_auto]">
+                  <input
+                    value={item.label}
+                    onChange={(event) => onUpdateLink(item.id, 'label', event.target.value)}
+                    placeholder="按鈕名稱"
+                    className="rounded-2xl border border-slate bg-[#f8fafd] px-3 py-2 text-sm outline-none"
+                  />
+                  <input
+                    value={item.url}
+                    onChange={(event) => onUpdateLink(item.id, 'url', event.target.value)}
+                    placeholder="https://..."
+                    className="rounded-2xl border border-slate bg-[#f8fafd] px-3 py-2 text-sm outline-none"
+                  />
+                  <button
+                    onClick={() => onDeleteLink(item.id)}
+                    className="rounded-full border border-red-200 bg-red-50 p-2 text-red-500"
+                    aria-label="刪除連結"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+                <LinkButtons items={[item]} />
+              </article>
+            ))}
+          </div>
         ) : (
           <div className="rounded-[24px] bg-[#f7f9fc] p-4 text-sm text-mist">目前沒有符合條件的連結。</div>
         )}
