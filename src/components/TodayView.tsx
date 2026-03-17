@@ -4,6 +4,7 @@ import {
   ChevronDown,
   ChevronUp,
   CloudSun,
+  PencilLine,
   ExternalLink,
   MapPinned,
   QrCode,
@@ -22,6 +23,7 @@ import {
 interface TodayViewProps {
   day: TripDay
   onToggleDone: (collection: 'transportation' | 'itinerary' | 'meals', itemId: string) => void
+  onEditItem: (collection: 'transportation' | 'itinerary' | 'meals', itemId: string) => void
 }
 
 const iconByCollection: Record<'transportation' | 'itinerary' | 'meals', string> = {
@@ -54,7 +56,7 @@ function MiniLinkButton({ url, label }: { url?: string; label: string }) {
   )
 }
 
-export function TodayView({ day, onToggleDone }: TodayViewProps) {
+export function TodayView({ day, onToggleDone, onEditItem }: TodayViewProps) {
   const [essentialsOpen, setEssentialsOpen] = useState(false)
   const [now, setNow] = useState(() => Date.now())
 
@@ -111,6 +113,13 @@ export function TodayView({ day, onToggleDone }: TodayViewProps) {
             <div className="mt-4 flex flex-wrap gap-2">
               <MiniLinkButton url={openPrimaryLink(nextAction.item)} label="一鍵打開地圖" />
               <button
+                onClick={() => onEditItem(nextAction.collection, nextAction.item.id)}
+                className="inline-flex items-center gap-2 rounded-full border border-slate bg-white px-4 py-2 text-sm font-semibold text-ink"
+              >
+                <PencilLine size={14} />
+                編輯
+              </button>
+              <button
                 onClick={() => onToggleDone(nextAction.collection, nextAction.item.id)}
                 className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
                   nextAction.item.isDone
@@ -118,7 +127,7 @@ export function TodayView({ day, onToggleDone }: TodayViewProps) {
                     : 'border-pine/15 bg-pine text-white shadow-[0_8px_20px_rgba(10,132,255,0.18)]'
                 }`}
               >
-                {nextAction.item.isDone ? '已完成' : '完成這一步'}
+                {nextAction.item.isDone ? 'Undo 完成' : '完成這一步'}
               </button>
             </div>
           </div>
@@ -178,7 +187,14 @@ export function TodayView({ day, onToggleDone }: TodayViewProps) {
                         done ? 'bg-slate/60 text-mist' : 'bg-[#f2f6fd] text-ink'
                       }`}
                     >
-                      {done ? '已完成' : '標記完成'}
+                      {done ? '恢復這一步' : '標記完成'}
+                    </button>
+                    <button
+                      onClick={() => onEditItem(entry.collection, entry.item.id)}
+                      className="inline-flex items-center gap-2 rounded-full border border-slate bg-white px-3 py-1.5 text-xs font-semibold text-ink"
+                    >
+                      <PencilLine size={13} />
+                      編輯
                     </button>
                     <MiniLinkButton url={openPrimaryLink(entry.item)} label="地圖" />
                   </div>

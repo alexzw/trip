@@ -6,6 +6,7 @@ import { DayNavigator } from './components/DayNavigator'
 import { EditModePanel } from './components/EditModePanel'
 import { FootprintsPage } from './components/FootprintsPage'
 import { OverviewPanel } from './components/OverviewPanel'
+import { QuickEditSheet } from './components/QuickEditSheet'
 import { ShoppingPanel } from './components/ShoppingPanel'
 import { TodayView } from './components/TodayView'
 import { Toolbar } from './components/Toolbar'
@@ -48,6 +49,10 @@ function App() {
   const [editMode, setEditMode] = useState(false)
   const [toast, setToast] = useState('')
   const [touchStartX, setTouchStartX] = useState<number | null>(null)
+  const [quickEditTarget, setQuickEditTarget] = useState<{
+    collection: 'transportation' | 'itinerary' | 'meals'
+    itemId: string
+  } | null>(null)
 
   const filteredDays = useMemo(
     () =>
@@ -77,6 +82,11 @@ function App() {
     trip.days.find((day) => day.id === selectedDayId) ??
     filteredDays[0] ??
     trip.days[0]
+
+  const quickEditItem =
+    quickEditTarget && selectedDay
+      ? selectedDay[quickEditTarget.collection].find((item) => item.id === quickEditTarget.itemId) ?? null
+      : null
 
   const selectRelativeDay = (direction: 'prev' | 'next') => {
     if (!selectedDay) return
@@ -513,6 +523,7 @@ function App() {
               <TodayView
                 day={selectedDay}
                 onToggleDone={(collection, itemId) => toggleTrackableItem(collection, itemId, 'isDone')}
+                onEditItem={(collection, itemId) => setQuickEditTarget({ collection, itemId })}
               />
             </main>
           ) : null}
@@ -526,6 +537,7 @@ function App() {
                   query={deferredQuery}
                   onToggleDone={(collection, itemId) => toggleTrackableItem(collection, itemId, 'isDone')}
                   onToggleStar={(collection, itemId) => toggleTrackableItem(collection, itemId, 'isStarred')}
+                  onEditItem={(collection, itemId) => setQuickEditTarget({ collection, itemId })}
                   onAddToFootprint={addItemToFootprint}
                   isInFootprints={isInFootprints}
                 />
@@ -597,6 +609,17 @@ function App() {
           </div>
         </div>
       ) : null}
+
+      <QuickEditSheet
+        open={Boolean(quickEditTarget && quickEditItem)}
+        collection={quickEditTarget?.collection ?? null}
+        item={quickEditItem}
+        onClose={() => setQuickEditTarget(null)}
+        onTimelineChange={(collection, itemId, field, value) =>
+          updateTimelineField(collection, itemId, field, value)
+        }
+        onMealChange={(itemId, field, value) => updateMealField(itemId, field, value)}
+      />
 
       <BottomNav activeTab={activeTab} onChange={setActiveTab} />
     </div>

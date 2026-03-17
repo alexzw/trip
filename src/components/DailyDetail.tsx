@@ -4,6 +4,7 @@ import {
   ChevronUp,
   ExternalLink,
   Footprints,
+  PencilLine,
   Star,
   StarOff,
 } from 'lucide-react'
@@ -16,6 +17,7 @@ interface DailyDetailProps {
   query: string
   onToggleDone: (collection: 'transportation' | 'itinerary' | 'meals', itemId: string) => void
   onToggleStar: (collection: 'transportation' | 'itinerary' | 'meals', itemId: string) => void
+  onEditItem: (collection: 'transportation' | 'itinerary' | 'meals', itemId: string) => void
   onAddToFootprint: (collection: 'transportation' | 'itinerary' | 'meals', itemId: string) => void
   isInFootprints: (collection: 'transportation' | 'itinerary' | 'meals', itemId: string) => boolean
 }
@@ -95,6 +97,7 @@ function TimelineRows({
   categoryFilter,
   onToggleDone,
   onToggleStar,
+  onEditItem,
   onAddToFootprint,
   isInFootprints,
 }: {
@@ -104,6 +107,7 @@ function TimelineRows({
   categoryFilter: FilterCategory
   onToggleDone: (collection: 'transportation' | 'itinerary' | 'meals', itemId: string) => void
   onToggleStar: (collection: 'transportation' | 'itinerary' | 'meals', itemId: string) => void
+  onEditItem: (collection: 'transportation' | 'itinerary' | 'meals', itemId: string) => void
   onAddToFootprint: (collection: 'transportation' | 'itinerary' | 'meals', itemId: string) => void
   isInFootprints: (collection: 'transportation' | 'itinerary' | 'meals', itemId: string) => boolean
 }) {
@@ -182,7 +186,14 @@ function TimelineRows({
                   item.isDone ? 'bg-slate/60 text-mist' : 'bg-[#f2f6fd] text-ink'
                 }`}
               >
-                {item.isDone ? '已完成' : '標記完成'}
+                {item.isDone ? '恢復這一步' : '標記完成'}
+              </button>
+              <button
+                onClick={() => onEditItem(collection, item.id)}
+                className="inline-flex items-center gap-2 rounded-full border border-slate bg-white px-3 py-2 text-xs font-semibold text-ink"
+              >
+                <PencilLine size={13} />
+                編輯
               </button>
               <button
                 onClick={() => onAddToFootprint(collection, item.id)}
@@ -211,6 +222,7 @@ export function DailyDetail({
   query,
   onToggleDone,
   onToggleStar,
+  onEditItem,
   onAddToFootprint,
   isInFootprints,
 }: DailyDetailProps) {
@@ -282,6 +294,7 @@ export function DailyDetail({
           categoryFilter={categoryFilter}
           onToggleDone={onToggleDone}
           onToggleStar={onToggleStar}
+          onEditItem={onEditItem}
           onAddToFootprint={onAddToFootprint}
           isInFootprints={isInFootprints}
         />
@@ -301,6 +314,7 @@ export function DailyDetail({
           categoryFilter={categoryFilter}
           onToggleDone={onToggleDone}
           onToggleStar={onToggleStar}
+          onEditItem={onEditItem}
           onAddToFootprint={onAddToFootprint}
           isInFootprints={isInFootprints}
         />
@@ -320,6 +334,7 @@ export function DailyDetail({
           categoryFilter={categoryFilter}
           onToggleDone={onToggleDone}
           onToggleStar={onToggleStar}
+          onEditItem={onEditItem}
           onAddToFootprint={onAddToFootprint}
           isInFootprints={isInFootprints}
         />
