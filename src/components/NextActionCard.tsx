@@ -23,7 +23,10 @@ export function NextActionCard({
 }: NextActionCardProps) {
   return (
     <section className="touch-card border-[#DCEAE4] bg-[linear-gradient(180deg,#FFFFFF_0%,#F7FBF9_100%)] p-5">
-      <div className="text-[12px] font-semibold uppercase tracking-[0.24em] text-sage">Next Action</div>
+      <div className="flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.24em] text-sage">
+        <span className="text-[14px]">🔥</span>
+        <span>Next Action</span>
+      </div>
       <div className="mt-4 text-[20px] font-bold leading-tight text-ink">{title}</div>
       <div className="mt-2 text-[14px] text-mist">{time}</div>
       {location ? <div className="mt-1 text-[16px] font-medium text-ink">{location}</div> : null}

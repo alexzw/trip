@@ -8,11 +8,29 @@ interface FootprintCardProps {
 }
 
 export function FootprintCard({ footprint, onEdit, onFavorite }: FootprintCardProps) {
+  const categoryEmoji =
+    footprint.category === 'restaurant'
+      ? '🍜'
+      : footprint.category === 'hotel'
+        ? '🏨'
+        : footprint.category === 'station'
+          ? '🚉'
+          : footprint.category === 'walk'
+            ? '🌿'
+            : footprint.category === 'shopping'
+              ? '🛍️'
+              : footprint.category === 'transport'
+                ? '🛫'
+                : '📍'
+
   return (
     <article className="memory-card p-4">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <div className="text-[16px] font-semibold text-ink">{footprint.placeName}</div>
+          <div className="flex items-center gap-2 text-[16px] font-semibold text-ink">
+            <span>{categoryEmoji}</span>
+            <span>{footprint.placeName}</span>
+          </div>
           <div className="mt-1 text-[14px] text-mist">
             {footprint.city} • {footprint.date || '未填日期'}
           </div>

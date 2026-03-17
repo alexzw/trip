@@ -587,7 +587,7 @@ function App() {
         <div className="mt-4 space-y-5">
           {activeTab === 'today' && selectedDay ? (
             <main onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
-              <PageHeader title="Today" subtitle="現在要做什麼" meta={`${selectedDay.city} · ${selectedDay.date}`} />
+              <PageHeader title="Today" emoji="🧭" subtitle="現在要做什麼" meta={`${selectedDay.city} · ${selectedDay.date}`} />
               <TodayView
                 day={selectedDay}
                 onToggleDone={(collection, itemId) => toggleTrackableItem(collection, itemId, 'isDone')}
@@ -600,7 +600,7 @@ function App() {
           {activeTab === 'days' ? (
             selectedDay ? (
               <main className="space-y-5" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
-                <PageHeader title="Days" subtitle="完整每日行程" meta="Swipe 左右切換 day，所有內容以 block 呈現" />
+                <PageHeader title="Days" emoji="📅" subtitle="完整每日行程" meta="Swipe 左右切換 day，所有內容以 block 呈現" />
                 <DailyDetail
                   day={selectedDay}
                   categoryFilter={categoryFilter}
@@ -672,7 +672,7 @@ function App() {
 
           {activeTab === 'checklist' ? (
             <>
-              <PageHeader title="Checklist" subtitle="出發前與旅行中的任務管理" />
+              <PageHeader title="Checklist" emoji="✅" subtitle="出發前與旅行中的任務管理" />
               <ChecklistPanel
                 finalChecks={trip.finalChecks}
                 packingChecklist={trip.packingChecklist}
@@ -684,7 +684,7 @@ function App() {
 
           {activeTab === 'footprints' ? (
             <>
-              <PageHeader title="Footprints" subtitle="旅行足跡與記憶資料庫" />
+              <PageHeader title="Footprints" emoji="🧭" subtitle="旅行足跡與記憶資料庫" />
               <FootprintsPage
                 trip={trip}
                 footprints={footprints}
@@ -699,7 +699,7 @@ function App() {
 
           {activeTab === 'more' ? (
             <>
-              <PageHeader title="More" subtitle="低頻功能、總覽與資料管理" />
+              <PageHeader title="More" emoji="⚙️" subtitle="低頻功能、總覽與資料管理" />
               <div className="space-y-5">
                 <SectionBlock title="Trip Overview" subtitle="旅程總覽與櫻花預測" defaultOpen>
                   <OverviewPanel trip={trip} overallProgress={overallProgress} />

@@ -10,7 +10,10 @@ interface MealCardProps {
 export function MealCard({ title, time, description, onNavigate }: MealCardProps) {
   return (
     <section className="touch-card">
-      <div className="text-[12px] font-semibold uppercase tracking-[0.24em] text-mist">Next Meal</div>
+      <div className="flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.24em] text-mist">
+        <span className="text-[14px]">🍽️</span>
+        <span>Next Meal</span>
+      </div>
       <div className="mt-3 text-[16px] font-semibold text-ink">{title || '未安排'}</div>
       <div className="mt-1 text-[14px] text-mist">{time}</div>
       {description ? <div className="mt-2 text-[14px] text-mist">{description}</div> : null}
